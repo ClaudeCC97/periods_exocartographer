@@ -5,30 +5,32 @@ Created on Tue Jan 15 19:05:14 2019
 
 @author: claude
 """
+# We perform a Metropolis-Hastings Markov chain Monte Carlo to fit for the rotation period
+# This method is not the most efficient; it is presented here for completeness
 
-# Importing modules and generated data
+# Importing modules
 import numpy as np
 import healpy as hp
-
 import emcee
 from matplotlib import pyplot as plt
-
 from exocartographer import IlluminationMapPosterior
 from exocartographer.util import logit
-
 import time
 
-sim_map = np.loadtxt('sim_map_very_simple.csv', delimiter=',') # data
+# Import the data generated in sim_map.py, with its resolution
+sim_map = np.loadtxt('sim_map.csv', delimiter=',') # data
 sim_nside = 1
 
+# Visualize the albedo map
 hp.mollview(sim_map, min=0, max=1,
             title='Simulated Albedo Map', cmap='gist_gray') #albedo map
 
-#%% Observations
+# Observations and observational parameters
 # Set orbital properties
-p_rotation = 23.934
-p_orbit = 365.256363 * p_rotation
-phi_orb = np.pi
+# Here, the orbital properties are the same as in those used by Farr et al. (2018) in their exocartographer paper
+p_rotation = 23.934                                         # rotation period in hours
+p_orbit = 365.256363 * p_rotation                           # orbital period in hours
+phi_orb = np.pi                                 
 inclination = np.pi/2
 obliquity = 90. * np.pi/180.0
 phi_rot = np.pi
@@ -36,11 +38,9 @@ phi_rot = np.pi
 # Observation schedule
 day = 23.934
 cadence = 1.
-nobs_per_epoch = 35   #make higher to minimize uncertainty
+nobs_per_epoch = 35                                         # obseverve per epochs of 35h
 epoch_duration = nobs_per_epoch * cadence
-
-#epoch_starts = [30*day, 60*day, 150*day, 210*day, 250*day] for 24h observations
-epoch_starts = [50*day, 120*day, 210*day, 280*day] #for 35h observations
+epoch_starts = [50*day, 120*day, 210*day, 280*day]          # 4 epochs of observation; total of 140 data points
 
 times = np.array([])
 for epoch_start in epoch_starts:
@@ -48,7 +48,7 @@ for epoch_start in epoch_starts:
                               nobs_per_epoch)
     times = np.concatenate([times, epoch_times])
     
-measurement_std = 0.001 #to increase eventually
+measurement_std = 0.001                                     # 
 
 #%% Posterior parameters
 truth = IlluminationMapPosterior(times, np.zeros_like(times),
